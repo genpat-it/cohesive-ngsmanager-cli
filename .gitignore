@@ -1,0 +1,14 @@
+# Nextflow
+.nextflow/
+.nextflow.log*
+work/
+ngsmanager_workdir/
+pipeline_info/
+
+# Test data
+*.fastq.gz
+*.fq.gz
+
+# Temporary files
+*.tmp
+.tmp/
