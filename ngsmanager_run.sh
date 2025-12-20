@@ -26,6 +26,8 @@
 #   NGSMANAGER_DIR  Path to cohesive-ngsmanager (required if not in ./cohesive-ngsmanager)
 #   WORKDIR         Working directory (default: ./ngsmanager_workdir)
 #   NEXTFLOW        Path to nextflow (default: searches in PATH or ~/.local/bin)
+#   
+#   Results are saved to /mnt/data/results by default (use --outdir to change)
 #
 
 set -e
@@ -85,6 +87,7 @@ usage() {
     echo "  --cmp CODE            Sample code (default: auto-generated)"
     echo "  --resume              Resume previous execution"
     echo "  --no-timeout          Disable timeout for all processes"
+    echo "  --outdir DIR          Output directory for results (default: /mnt/data/results)"
     echo "  [other parameters]    Passed directly to nextflow"
     echo ""
     echo -e "${YELLOW}Environment variables:${NC}"
@@ -150,6 +153,7 @@ EXTRA_OPTS=""
 CMP=""
 RESUME=""
 NO_TIMEOUT=""
+CUSTOM_OUTDIR=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --seq_type)
@@ -167,6 +171,10 @@ while [ $# -gt 0 ]; do
         --no-timeout)
             NO_TIMEOUT="yes"
             shift
+            ;;
+        --outdir)
+            CUSTOM_OUTDIR="$2"
+            shift 2
             ;;
         *)
             EXTRA_OPTS="$EXTRA_OPTS $1"
@@ -206,12 +214,15 @@ echo -e "${YELLOW}RISCD:${NC}      $RISCD"
 echo -e "${YELLOW}Seq type:${NC}   $SEQ_TYPE"
 echo -e "${YELLOW}Input R1:${NC}   $R1"
 [ -n "$R2" ] && echo -e "${YELLOW}Input R2:${NC}   $R2"
+[ -n "$CUSTOM_OUTDIR" ] && echo -e "${YELLOW}Output dir:${NC} $CUSTOM_OUTDIR"
 [ -n "$EXTRA_OPTS" ] && echo -e "${YELLOW}Extra:${NC}      $EXTRA_OPTS"
 echo ""
 
 # === CREATE DIRECTORY STRUCTURE ===
 INPUT_DIR="$WORKDIR/inputdir/$YEAR/$CMP/$INPUT_ACC/DS${DS}-DT${DT}_${INPUT_METHOD}/result"
-OUTPUT_DIR="$WORKDIR/results"
+# Use custom outdir if specified, otherwise use /mnt/data/results as default
+OUTPUT_DIR="${CUSTOM_OUTDIR:-/mnt/data/results}"
+OUTPUT_DIR=$(realpath -m "$OUTPUT_DIR")  # Resolve path, create if needed
 WORK_DIR="$WORKDIR/work"
 TMP_DIR="$WORKDIR/.tmp"
 
