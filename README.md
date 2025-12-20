@@ -123,6 +123,14 @@ Common steps:
 | `step_4AN_AMR__abricate.nf` | AMR detection with Abricate |
 | `step_4TY_MLST__mlst.nf` | MLST typing |
 
+### Test Step
+
+⚠️ **For testing purposes only**: `cohesive-ngsmanager/steps/step_TEST_custom__kmer.nf`
+
+This is a test custom step example that demonstrates how to create custom Nextflow steps. It performs k-mer analysis (k=17) using the `staphb/seqtk` Docker container.
+
+**Note**: This file is located in `cohesive-ngsmanager/steps/` for testing. If you want to use it, you can reference it directly, but it's intended as an example for creating your own custom steps.
+
 ## Output Structure
 
 ```
