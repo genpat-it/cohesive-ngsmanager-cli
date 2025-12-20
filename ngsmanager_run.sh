@@ -227,10 +227,14 @@ echo ""
 
 # === GENERATE CLI CONFIG ===
 # This config mounts the scripts directory to fix the containerOptions issue
+# Note: If the step already has containerOptions with /scripts mount, we don't add it here to avoid duplicate mount
 SCRIPTS_DIR="$NGSMANAGER_DIR/scripts/$STEP_BASENAME"
 CLI_CONFIG="$WORKDIR/cli.config"
 
-if [ -d "$SCRIPTS_DIR" ]; then
+# Check if step already has containerOptions with /scripts mount
+HAS_SCRIPTS_MOUNT=$(grep -q "containerOptions.*:/scripts" "$STEP_FILE" 2>/dev/null && echo "yes" || echo "no")
+
+if [ -d "$SCRIPTS_DIR" ] && [ "$HAS_SCRIPTS_MOUNT" = "no" ]; then
     cat > "$CLI_CONFIG" << EOF
 // Auto-generated CLI config - mounts scripts directory for container processes
 docker {
@@ -241,6 +245,20 @@ docker {
 EOF
     echo -e "${GREEN}Generated CLI config:${NC} $CLI_CONFIG"
     echo -e "  Scripts mount: ${YELLOW}${SCRIPTS_DIR}:/scripts${NC}"
+    echo ""
+    CONFIG_OPT="-c $CLI_CONFIG"
+elif [ "$HAS_SCRIPTS_MOUNT" = "yes" ]; then
+    # Step already has containerOptions with /scripts, just set basic docker config without mount
+    cat > "$CLI_CONFIG" << EOF
+// Auto-generated CLI config - step already has containerOptions with /scripts mount
+docker {
+    enabled = true
+    runOptions = "-u \\\$(id -u):\\\$(id -g) --memory-swappiness 0 --cpus 64"
+    fixOwnership = true
+}
+EOF
+    echo -e "${GREEN}Generated CLI config:${NC} $CLI_CONFIG"
+    echo -e "${YELLOW}Note:${NC} Step already has containerOptions with /scripts mount, using it"
     echo ""
     CONFIG_OPT="-c $CLI_CONFIG"
 else
