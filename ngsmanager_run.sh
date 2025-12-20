@@ -84,6 +84,7 @@ usage() {
     echo "  --genus_species SP    E.g.: Salmonella_enterica (required for some steps)"
     echo "  --cmp CODE            Sample code (default: auto-generated)"
     echo "  --resume              Resume previous execution"
+    echo "  --no-timeout          Disable timeout for all processes"
     echo "  [other parameters]    Passed directly to nextflow"
     echo ""
     echo -e "${YELLOW}Environment variables:${NC}"
@@ -148,6 +149,7 @@ fi
 EXTRA_OPTS=""
 CMP=""
 RESUME=""
+NO_TIMEOUT=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --seq_type)
@@ -160,6 +162,10 @@ while [ $# -gt 0 ]; do
             ;;
         --resume)
             RESUME="-resume"
+            shift
+            ;;
+        --no-timeout)
+            NO_TIMEOUT="yes"
             shift
             ;;
         *)
@@ -265,6 +271,34 @@ else
     echo -e "${YELLOW}Note:${NC} No scripts directory found for this step, skipping config generation"
     echo ""
     CONFIG_OPT=""
+fi
+
+# Add global timeout override if requested
+if [ "$NO_TIMEOUT" = "yes" ]; then
+    # Ensure config file exists
+    if [ ! -f "$CLI_CONFIG" ]; then
+        cat > "$CLI_CONFIG" << EOF
+// Auto-generated CLI config
+docker {
+    enabled = true
+    runOptions = "-u \\\$(id -u):\\\$(id -g) --memory-swappiness 0 --cpus 64"
+    fixOwnership = true
+}
+EOF
+        CONFIG_OPT="-c $CLI_CONFIG"
+    fi
+    
+    # Append timeout override to config
+    # Use a very high timeout value instead of null for better Nextflow compatibility
+    cat >> "$CLI_CONFIG" << EOF
+
+// Disable timeout for all processes (using very high value)
+process {
+    time = 999.h
+}
+EOF
+    echo -e "${GREEN}Disabled timeout:${NC} All processes will run without time limit"
+    echo ""
 fi
 
 # === CONFIGURE ENVIRONMENT ===
